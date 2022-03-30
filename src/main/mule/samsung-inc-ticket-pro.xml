@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+    <http:listener-config name="samsung-inc-ticket-pro-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8082" />
+    </http:listener-config>
+    <apikit:config name="samsung-inc-ticket-pro-config" api="resource::5c2df58c-39fd-4528-86b7-7dc8bbf625bb:samsung-ticket-pro:1.0.2:raml:zip:samsung-inc-ticket-pro.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="5bb96d8f-f4ef-482f-b57e-4bf7a5bd3164">
+        <http:request-connection host="localhost" port="8083" />
+    </http:request-config>
+    <flow name="samsung-inc-ticket-pro-main">
+        <http:listener config-ref="samsung-inc-ticket-pro-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="samsung-inc-ticket-pro-config" />
+    </flow>
+    <flow name="put:\updateTicket:application\json:samsung-inc-ticket-pro-config">
+        <http:request method="PUT" doc:name="Request Call To SysApi" doc:id="c391d9b3-158c-4abf-9fef-7cf0864d8c7b" config-ref="HTTP_Request_configuration" path="/api/updateTicket" />
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  id: "INC456",
+  status: "Ticket upadted sucess."
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="delete:\deleteTicket:samsung-inc-ticket-pro-config">
+        <http:request method="DELETE" doc:name="Request" doc:id="aac9b406-8640-4b03-8057-023283318572" config-ref="HTTP_Request_configuration" path="/api/deleteTicket">
+            <http:query-params><![CDATA[#[output application/java
+---
+{
+	"inc" : attributes.queryParams.inc
+}]]]></http:query-params>
+        </http:request>
+        <ee:transform doc:name="Transform Message" doc:id="7ddf16af-09f7-4bbf-b707-d11824ff5d66">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json	
+---
+payload]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <logger level="INFO" message="delete:\deleteTicket:samsung-inc-ticket-pro-config" />
+    </flow>
+    <flow name="get:\fetchTickets:samsung-inc-ticket-pro-config">
+        <http:request method="GET" doc:name="Request Call To SysApi" doc:id="26237922-0c13-4b36-8d1b-b0bf6abf2c2a" config-ref="HTTP_Request_configuration" path="/api/fetchTickets">
+            <http:query-params><![CDATA[#[output application/java
+---
+{
+	"inc" : attributes.queryParams.inc
+}]]]></http:query-params>
+        </http:request>
+        <ee:transform doc:name="Transform Message" doc:id="59dac8b4-8020-4cc3-8125-8b178668ce8a">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+        <logger level="INFO" message="get:\fetchTickets:samsung-inc-ticket-pro-config" />
+    </flow>
+    <flow name="post:\raiseticket:application\json:samsung-inc-ticket-pro-config">
+        <http:request method="POST" doc:name="Request Call To SysApi" doc:id="dc47d568-98eb-491f-bed7-afd4097b2a27" config-ref="HTTP_Request_configuration" path="/api/raiseticket" />
+        <ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  id: "INC456",
+  status: "Ticket created successfully."
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+</mule>
